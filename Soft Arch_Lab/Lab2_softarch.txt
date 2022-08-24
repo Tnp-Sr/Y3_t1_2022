@@ -1,0 +1,46 @@
+[1]
+A(system) = A(Webserver) * A(Appserver) * A(DBserver)
+                 = 0.99 * 1-(1-0.9)^3 * 1-(1-0.95)^2
+                 = 0.99 * 0.999 * 0.9975 
+                 = 0.986537475
+ดังนั้น availability ของระบบจะอยู่ที่ 98.6537%
+
+[2]
+keepalived นั้นมีการแบ่งการทำงานให้กับ children process โดยจะแยกออกจากกัน ซึ่งตรงนี้จะใช้ framework ที่เรียกว่า watchdog ในการตรวจสอบการทำงานและคอยจัดการกับ dead children process ที่อยู่ในระบบ โดยจะทำการ restart children process ดังกล่าว
+
+[3]
+1. Monitor จากการใช้ watchdog ในการตรวจสอบการทำงานของ children process แต่ละตัว
+2. Ping/Echo โดยตัวของ watchdog จะใช้ส่งสิ่งที่เรียกว่า hello packets ไปที่ children process เพื่อตรวจสอบว่ามี children process ตัวไหนหยุดการทำงานแล้วหรือยัง
+3. Escalating Restart โดยที่ตัวของ parent process จะเลือก restart children process ในส่วนที่ไม่สามารถส่ง hello package ไปถึงได้โดยที่ไม่จำเป็นต้อง restart ทั้งหมด
+4. Non-stop Forwarding ตัวของ keepalive จะทำการแบ่ง element เป็น control plane และ data plane โดยสังเกตุที่ Atomic element
+5. State Resynchronization keepalive มีในส่วนของ VRRP Instance synchronization อยู่ 2 ตัว ซึ่งจะรู้จักในชื่อ VRRP sync group โดยจะรับประกันว่าจะสามารถ synchronized กลับมาอยู่ที่ state เดียวกันระหว่าง VRRP sync group เดียวกัน
+
+[4]
+Hardware เกิดจากที่ตัวของ Primary node เกิดปัญหาบางอย่างเช่น ตัวเครื่องขัดข้อง ไฟเลี้ยงไม่เพียงพอ หรือเหตุสุดวิสัยบางประการในส่วนของตัว storage ที่เป็นที่เก็บข้อมูลของ Primary node จนทำให้ไม่สามารถเขียนข้อมูลลงไปได้
+
+[5]
+Software เกิดจากการที่ตัวของ Proxy (MariaDB MaxScale) ไม่ได้รับการตอบสนองจาก Primary node ทำให้ automatic failover แล้วทำการหา Replica ที่มีค่า GTID สูงที่สุดมาทำการ promate เป็น Primary node ต่อไป
+
+[6]
+Physical infrastructure เกิดจากการเชื่อมต่อระหว่าง Primary node กับภายนอกอาจจะมีปัญหา ทำให้ไม่สามารถทำการเชื่อมต่อกับตัวของ Proxy (MariaDB MaxScale) ได้ จึงต้องทำการหา Primary node ใหม่
+
+[7]
+1. Voting : Replication เพราะได้มีการทำ replica เพื่อสร้างข้อมูลขุดสำรองสำหรับการนำมาใช้เมื่อ Primary node มีปัญหา
+2. Redundant spare เพราะว่าตัวของ replica จะรอการ update จาก Primary node ให้ได้อย่างน้อยหนึ่งตัวก่อนที่ Primary node จะยืนยันการเขียนข้อมูลนั้น
+3. Timestamp เพราะว่าในตัวของ replica จะทำการเก็บ log ไว้ที่ relay log ของตัวมันเอง 
+
+การเพิ่มในส่วนของ application ใน software จะต้องแลกเปลี่ยนข้อมูลที่อยู่ในรูปแบบที่ถูกต้องของแต่ละด้าน เพื่อที่ทั้งสองด้านจะเข้าใจข้อมูลและสามารถทำงานร่วมกันได้ ซึ่งการช่วยเปลี่ยนรูปแบบข้อมูลให้ตรงกันนั้นจะเป็นหน้าที่ของตัวกลาง ยกตัวอย่างเช่น
+1. Oracle
+2. Arurea
+3. Mulesoft
+4. CodeStruct
+5. Apache
+
+[9]
+OSGi เป็นระบบ Module ของ Java ที่สามารถนำ software และ library ที่แยกกันสร้างมาสร้างเป็น dynamic module ได้ ซึ่งสามารถแยกส่วนและประกอบกันได้อย่างอิสระ OSGi specification จะเป็นข้อกำหนดหรือมาตรฐานเกี่ยวกับการเชื่อมต่อกันระหว่าง software หรือ library เช่น การเชื่อมต่อผ่าน HTTP Service, UPnP Technology Device Service, Web Application เป็นต้นซึ่งในปัจจุบันเป็นเวอร์ชั่นที่ 8 (เวอร์ชั่นที่ 9 อยู่ในช่วง Draft) ซึ่งจะสามารถสนับสนุนหรือส่งเสริม integrability ของ software system ได้จากการที่ด้วยการที่สามารถแยกและประกอบได้สะดวกมากขึ้น ทำให้การ Adapt อะไรต่าง ๆ ทำได้ดีขึ้น ก็นับว่าทำให้การ integrate สะดวกขึ้น
+
+[10]
+DNS-Based Service Discovery คือการนำหลักการเดียวกันกับ DNS มาใช้ในการระบุที่อยู่ของ service แต่ละ service โดยการที่ตัวของ service นั้นเมื่อต้องการติดต่อไปที่ service อื่นจะไม่ทราบว่า service ที่ต้องการติดต่อนั้นอยู่ที่ไหน จึงไปถามหาที่อยู่ที่ตัว service registry โดยที่ service registry ก็จะทำการส่งที่อยู่ของ service นั้นกลับไปหา service ที่ทำการร้องขอ จากนั้น service ก็จะทำการติดต่อกับ service อื่นตามที่อยู่ที่ service registry มอบมาให้ 
+
+
+
