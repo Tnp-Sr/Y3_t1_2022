@@ -1,6 +1,6 @@
 //หลีกเลี่ยงปัญหา Liskov Substitution Principle (LSP)
 
-package com.solid.lsp;
+
 
 
 public class Main {
